@@ -16,63 +16,83 @@ const users = [
   },
 ];
 
-export const getUsers = (req, res) => {
-  return res.status(200).json(users);
+export const getUsers = (req, res, next) => {
+  try {
+    return res.status(200).json(users);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const getUserById = (req, res) => {
+export const getUserById = (req, res, next) => {
   const { id } = req.params;
 
-  const user = users.find((user) => user.id === Number(id));
+  try {
+    const user = users.find((user) => user.id === Number(id));
 
-  if (!user) {
-    return res.status(404).send('User not found');
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    res.status(200).send(user);
+  } catch (error) {
+    next(error);
   }
-
-  res.status(200).send(user);
 };
 
-export const createUser = (req, res) => {
+export const createUser = (req, res, next) => {
   const { name, email } = req.body;
-  const user = {
-    id: users.length + 1,
-    name,
-    email,
-  };
+  if (!name || !email) {
+    return res.status(400).send('Name and email are required');
+  }
+  try {
+    const user = {
+      id: users.length + 1,
+      name,
+      email,
+    };
 
-  users.push(user);
-
-  res.status(201).send(user);
+    users.push(user);
+    res.status(201).send(user);
+  } catch (error) {
+    next(error);
+  }
 };
 
-export const updateUser = (req, res) => {
+export const updateUser = (req, res, next) => {
   const { id } = req.params;
   const { name, email } = req.body;
 
-  const user = users.find((user) => user.id === Number(id));
+  try {
+    const user = users.find((user) => user.id === Number(id));
 
-  if (!user) {
-    return res.status(404).send('User not found');
+    if (!user) {
+      return res.status(404).send('User not found');
+    }
+
+    user.name = name;
+    user.email = email;
+
+    res.status(200).send(user);
+  } catch (error) {
+    next(error);
   }
-
-  console.log(user);
-
-  user.name = name;
-  user.email = email;
-
-  res.status(200).send(user);
 };
 
-export const deleteUser = (req, res) => {
+export const deleteUser = (req, res, next) => {
   const { id } = req.params;
 
-  const userIndex = users.findIndex((user) => user.id === Number(id));
+  try {
+    const userIndex = users.findIndex((user) => user.id === Number(id));
 
-  if (userIndex === -1) {
-    return res.status(404).send('User not found');
+    if (userIndex === -1) {
+      return res.status(404).send('User not found');
+    }
+
+    users.splice(userIndex, 1);
+
+    res.status(204).send();
+  } catch (error) {
+    next(error);
   }
-
-  users.splice(userIndex, 1);
-
-  res.status(204).send();
 };

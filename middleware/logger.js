@@ -1,29 +1,26 @@
-import {
-  createFolderIfNotExist,
-  createFileIfNotExist,
-  writeToFile,
-} from '../utils/fs.js';
-import { stringify } from '../utils/helper.js';
+import { createLogger, format, transports } from 'winston';
 
-const logsFolder = '../logs';
+const { combine, timestamp, printf, errors } = format;
 
-createFolderIfNotExist(logsFolder);
+const myFormat = printf(
+  ({ level, message, timestamp, stack, params, body }) => {
+    return `${timestamp} [${level}]: ${stack || message} ${
+      params ? '| Params: ' + JSON.stringify(params) : ''
+    } ${body ? '| Body: ' + JSON.stringify(body) : ''}`;
+  }
+);
 
-createFileIfNotExist(`${logsFolder}/requests.log`);
-
-const logger = (req, res, next) => {
-  const { method, url, params, body } = req;
-
-  const timestamp = new Date().toISOString();
-
-  const paramsString = stringify(params);
-  const bodyString = stringify(body);
-
-  const logMessage = `[${timestamp}] Method: ${method} - URL: ${url} - Params: ${paramsString} - Body: ${bodyString}\n`;
-
-  writeToFile(`${logsFolder}/requests.log`, logMessage);
-
-  next();
-};
+const logger = createLogger({
+  level: 'info',
+  format: combine(
+    timestamp({ format: 'YYYY-MM-DD HH:mm:ss' }),
+    errors({ stack: true }),
+    myFormat
+  ),
+  transports: [
+    new transports.Console(),
+    new transports.File({ filename: 'logs/request.log' }),
+  ],
+});
 
 export default logger;
