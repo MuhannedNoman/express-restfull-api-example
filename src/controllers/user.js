@@ -1,97 +1,107 @@
-const users = [
-  {
-    id: 1,
-    name: 'Jhon Doe',
-    email: 'jhon@example.com',
-  },
-  {
-    id: 2,
-    name: 'Jane Doe',
-    email: 'jane@example.com',
-  },
-  {
-    id: 3,
-    name: 'Jade Doe',
-    email: 'jade@example.com',
-  },
-];
+import Joi from 'joi';
 
-export const getUsers = (req, res, next) => {
-  try {
-    return res.status(200).json(users);
-  } catch (error) {
-    next(error);
+import User from '../models/user.js';
+import response from './../../utils/response.js';
+
+const userSchema = Joi.object({
+  name: Joi.string().min(3).max(30),
+  email: Joi.string().email().required(),
+  password: Joi.string().min(8).required(),
+});
+
+const querySchema = Joi.object({
+  limit: Joi.number().integer().min(1).max(100).default(10),
+  page: Joi.number().integer().min(1).default(1),
+});
+
+export const getUsers = async (req, res, next) => {
+  const { error, value } = querySchema.validate(req.query);
+  if (error) {
+    return response(res, 400, null, error.details[0].message);
   }
-};
 
-export const getUserById = (req, res, next) => {
-  const { id } = req.params;
+  const { limit, page } = value;
+  const skip = (page - 1) * limit;
 
   try {
-    const user = users.find((user) => user.id === Number(id));
+    const users = await User.findAll({
+      take: limit + 1,
+      skip,
+    });
 
-    if (!user) {
-      return res.status(404).send('User not found');
-    }
+    const hasNext = users.length > limit;
 
-    res.status(200).send(user);
-  } catch (error) {
-    next(error);
-  }
-};
-
-export const createUser = (req, res, next) => {
-  const { name, email } = req.body;
-  if (!name || !email) {
-    return res.status(400).send('Name and email are required');
-  }
-  try {
-    const user = {
-      id: users.length + 1,
-      name,
-      email,
+    const data = {
+      users: users.slice(0, limit),
+      pagination: {
+        page,
+        limit,
+        hasNext,
+        nextPage: hasNext ? page + 1 : null,
+      },
     };
 
-    users.push(user);
-    res.status(201).send(user);
+    return response(res, 200, data, null);
   } catch (error) {
     next(error);
   }
 };
 
-export const updateUser = (req, res, next) => {
+export const getUserById = async (req, res, next) => {
   const { id } = req.params;
-  const { name, email } = req.body;
 
   try {
-    const user = users.find((user) => user.id === Number(id));
+    const foundUser = await User.findById(id);
 
-    if (!user) {
-      return res.status(404).send('User not found');
+    if (!foundUser) {
+      return response(res, 404, null, `No user found with id ${id}`);
     }
 
-    user.name = name;
-    user.email = email;
-
-    res.status(200).send(user);
+    return response(res, 200, foundUser, null);
   } catch (error) {
     next(error);
   }
 };
 
-export const deleteUser = (req, res, next) => {
+export const createUser = async (req, res, next) => {
+  const { error } = userSchema.validate(req.body);
+
+  if (error) {
+    return response(res, 400, null, error.details[0].message);
+  }
+
+  try {
+    const user = await User.create(req.body);
+    return response(res, 201, user, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const updateUser = async (req, res, next) => {
+  const { id } = req.params;
+  const { error } = userSchema.validate(req.body);
+
+  if (error) {
+    return response(res, 400, null, error.details[0].message);
+  }
+
+  try {
+    const updatedUser = await User.update(id, req.body);
+
+    return response(res, 200, updatedUser, null);
+  } catch (error) {
+    next(error);
+  }
+};
+
+export const deleteUser = async (req, res, next) => {
   const { id } = req.params;
 
   try {
-    const userIndex = users.findIndex((user) => user.id === Number(id));
+    await User.delete(id);
 
-    if (userIndex === -1) {
-      return res.status(404).send('User not found');
-    }
-
-    users.splice(userIndex, 1);
-
-    res.status(204).send();
+    return response(res, 204, null, null);
   } catch (error) {
     next(error);
   }
