@@ -20,6 +20,7 @@ app.use((req, _, next) => {
     stack: req.url,
     params: req.params,
     body: req.body,
+    filePath: req.file ? req.file.path : null,
   });
   next();
 });

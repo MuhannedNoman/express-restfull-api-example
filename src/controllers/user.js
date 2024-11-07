@@ -2,6 +2,7 @@ import Joi from 'joi';
 
 import User from '../models/user.js';
 import response from './../../utils/response.js';
+import { uploadHelper } from '../../utils/uploadHelper.js';
 
 const userSchema = Joi.object({
   name: Joi.string().min(3).max(30),
@@ -71,8 +72,17 @@ export const createUser = async (req, res, next) => {
   }
 
   try {
+    let filePath = null;
+    if (req.file) {
+      filePath = await uploadHelper(req.file);
+    }
+
     const user = await User.create(req.body);
-    return response(res, 201, user, null);
+    const responseJSON = {
+      ...user,
+      filePath,
+    };
+    return response(res, 201, responseJSON, null);
   } catch (error) {
     next(error);
   }

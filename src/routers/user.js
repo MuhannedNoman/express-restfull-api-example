@@ -1,4 +1,5 @@
 import { Router } from 'express';
+import multer from 'multer';
 
 import {
   createUser,
@@ -11,11 +12,13 @@ import validateIdParam from '../../middleware/validateIdParam.js';
 
 const router = Router();
 
+const upload = multer({ dest: 'uploads/' });
+
 router.get('/', getUsers);
 
 router.get('/:id', validateIdParam, getUserById);
 
-router.post('/', createUser);
+router.post('/', upload.single('file'), createUser);
 
 router.put('/:id', validateIdParam, updateUser);
 

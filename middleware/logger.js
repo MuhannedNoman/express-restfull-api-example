@@ -3,10 +3,11 @@ import { createLogger, format, transports } from 'winston';
 const { combine, timestamp, printf, errors } = format;
 
 const myFormat = printf(
-  ({ level, message, timestamp, stack, params, body }) => {
+  ({ level, message, timestamp, stack, params, body, filePath }) => {
     return `${timestamp} [${level}]: ${stack || message} ${
       params ? '| Params: ' + JSON.stringify(params) : ''
-    } ${body ? '| Body: ' + JSON.stringify(body) : ''}`;
+    } ${body ? '| Body: ' + JSON.stringify(body) : ''}
+    File: ${filePath || 'No file'}`;
   }
 );
 
