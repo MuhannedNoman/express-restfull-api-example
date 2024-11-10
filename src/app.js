@@ -1,7 +1,7 @@
 import express from 'express';
 import { PrismaClient } from '@prisma/client';
 import { fileURLToPath } from 'node:url';
-import { dirname } from 'node:path';
+import path, { dirname } from 'node:path';
 
 import routes from './routers/index.js';
 import logger from '../middleware/logger.js';
@@ -12,6 +12,7 @@ export const __dirname = dirname(fileURLToPath(import.meta.url));
 const app = express();
 export const prisma = new PrismaClient();
 
+app.set('view engine', 'ejs')
 app.use(express.json());
 app.use(express.urlencoded({ extended: true }));
 app.use((req, _, next) => {
@@ -24,6 +25,8 @@ app.use((req, _, next) => {
   });
   next();
 });
+
+app.set('views', path.join(__dirname, 'views'));
 
 routes(app);
 

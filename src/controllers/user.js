@@ -42,6 +42,7 @@ export const getUsers = async (req, res, next) => {
       },
     };
 
+    return res.render('users', data)
     return response(res, 200, data, null);
   } catch (error) {
     next(error);
